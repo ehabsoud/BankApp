@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HB Bank", "HB Bank\HB Bank.csproj", "{05A5B429-9E37-4421-9F7D-96525477B049}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{05A5B429-9E37-4421-9F7D-96525477B049}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05A5B429-9E37-4421-9F7D-96525477B049}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05A5B429-9E37-4421-9F7D-96525477B049}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05A5B429-9E37-4421-9F7D-96525477B049}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

@@ -23,6 +23,8 @@ bld/
 [Ll]og/
 [Ll]ogs/
 
+.DS_Store
+.idea/
 # .NET Core
 project.lock.json
 project.fragment.lock.json
