@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HB Bank", "HB Bank\HB Bank.csproj", "{05A5B429-9E37-4421-9F7D-96525477B049}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HBBank", "HBBank\HBBank.csproj", "{05A5B429-9E37-4421-9F7D-96525477B049}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
