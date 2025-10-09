@@ -1,0 +1,35 @@
+@page "/CreateAccount"
+@inject IAccountService AccountService;
+
+<h3>Vänligen skapa ett konto</h3>
+<EditForm="_model" OnValidSubmit="@AccountService.CreateAccount">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div className="mb-2">
+        <label>Kontonamn</label>
+        <InputText @bind-Value="_model"/>
+    </div>
+    
+    <div className="mb-2">
+        <label>Kontotyp</label>
+        <InputSelect bind-Value="_model.Type">
+        <option value="">Välj kontotyp!</option>
+        <option value="@AccountType.Deposit">Baskonto</option>
+        <option value ="@AccountType.Savings">Sparkonto</option>
+        </InputSelect>
+    </div>
+    
+    <div className="mb-2">
+        <label>Valuta</label>
+        <InputText @bind-Value="_model"></InputText>
+    </div>
+    
+    <div className="mb-2">
+    <label>Start saldo</label>
+    <InputNumber @bind-Value=""></InputNumber>
+    </div>
+</EditForm>
+
+@code {
+    
+}
