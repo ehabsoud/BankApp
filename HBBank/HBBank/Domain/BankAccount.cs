@@ -1,4 +1,4 @@
-namespace HB_Bank.Domain;
+namespace HBBank.Domain;
 
 public class BankAccount : IBankAccount
 {

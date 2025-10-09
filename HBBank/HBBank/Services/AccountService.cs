@@ -1,4 +1,4 @@
-namespace HB_Bank.Services;
+namespace HBBank.Services;
 
 public class AccountService : IAccountService
 {

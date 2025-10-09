@@ -1,4 +1,4 @@
-namespace HB_Bank.Interfaces;
+namespace HBBank.Interfaces;
 
 /// <summary>
 /// Interface containing the BankAccount methods

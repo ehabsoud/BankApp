@@ -1,6 +1,6 @@
-using HB_Bank.Domain;
+using HBBank.Domain;
 
-namespace HB_Bank.Interfaces;
+namespace HBBank.Interfaces;
 
 public interface IAccountService
 {
