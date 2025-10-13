@@ -1,4 +1,5 @@
-@page "/CreateAccount"
+@page "/createaccount"
+@using System.ComponentModel.DataAnnotations
 @inject IAccountService AccountService;
 
 <h3>Vänligen skapa ett konto</h3>
@@ -93,7 +94,7 @@ else
                 _model.Currency.ToString(),
                 _model.InitialBalance
             );
-
+            
             _model.Clear();
 
             StateHasChanged();
@@ -112,6 +113,7 @@ else
         public string? Name { get; set; }
         public AccountType AccountType { get; set; } = AccountType.Unknown;
         public Currency Currency { get; set; }
+        [Range(0.01, double.MaxValue, ErrorMessage = "Startbelopp måste vara större än 0")]
         public decimal InitialBalance { get; set; } = 0;
 
         public void Clear()
