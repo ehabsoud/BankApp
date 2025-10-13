@@ -110,6 +110,7 @@ else
 
     private class CreateAccountModel
     {
+        [Required(ErrorMessage = "Kontonamn måste anges")]
         public string? Name { get; set; }
         public AccountType AccountType { get; set; } = AccountType.Unknown;
         public Currency Currency { get; set; }
