@@ -5,66 +5,112 @@
 <EditForm Model="_model" OnValidSubmit="CreateAccountAsync">
     <DataAnnotationsValidator />
     <ValidationSummary />
-    <div className="mb-2">
+    <div class="mb-2">
         <label>Kontonamn</label>
         <InputText @bind-Value="_model.Name"/>
     </div>
-    
-    <div className="mb-2">
+    <div class="mb-2">
         <label>Kontotyp</label>
         <InputSelect @bind-Value="_model.AccountType">
-        <option value="">Välj kontotyp!</option>
-        <option value="@AccountType.Deposit">Baskonto</option>
-        <option value ="@AccountType.Savings">Sparkonto</option>
+            <option value="@AccountType.Unknown">Välj kontotyp!</option>
+            <option value="@AccountType.Deposit">Lönekonto</option>
+            <option value ="@AccountType.Savings">Sparkonto</option>
         </InputSelect>
     </div>
     
-    <div className="mb-2">
+    <div class="mb-2">
         <label>Valuta</label>
-        <InputText @bind-Value="_model.Currency"></InputText>
+        <InputSelect @bind-Value="_model.Currency">
+            <option value="@Currency.SEK">SEK</option>
+        </InputSelect>
+    </div>
+    <div class="mb-2">
+        <label>Start saldo</label>
+        <InputNumber @bind-Value="_model.InitialBalance"></InputNumber>
     </div>
     
-    <div className="mb-2">
-    <label>Start saldo</label>
-    <InputNumber @bind-Value="_model.InitialBalance"></InputNumber>
-    </div>
+    <button type="submit" class="btn btn-primary">Skapa Konto</button>
 </EditForm>
 
+<h3 class="mt-4">Kontolista</h3>
+
+@if (accounts == null || accounts.Count == 0)
+{
+    <p>Inga konton har skapats ännu.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Namn</th>
+            <th>Kontotyp</th>
+            <th>Saldo</th>
+            <th>Senast uppdaterad</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var account in accounts)
+        {
+            <tr>
+                <td>@account.Name</td>
+                <td>@account.AccountType</td>
+                <td>@account.Balance.ToString("C")</td>
+                <td>@account.LastUpdated.ToString("yyyy-MM-dd HH:mm")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
 @code {
-    private CreateAccountModel _model = new();
+    private readonly CreateAccountModel _model = new();
+    private List<IBankAccount> accounts = new();
+
+    protected override void OnInitialized()
+    {
+        accounts = AccountService.GetAccounts();
+    }
 
     private Task CreateAccountAsync()
     {
         try
         {
-            AccountService.CreateAccount(
+            Console.WriteLine(_model.Name);
+            
+            var newAccount = AccountService.CreateAccount(
                 _model.Name,
                 _model.AccountType,
-                _model.Currency,
-                _model.InitialBalance);
+                _model.Currency.ToString(),
+                _model.InitialBalance
+            );
+
+            _model.Clear();
+            
+            StateHasChanged();
         }
         catch (Exception exception)
         {
             Console.WriteLine(exception);
             throw;
         }
-
         return Task.CompletedTask;
     }
 
     private class CreateAccountModel
     {
         public string? Name { get; set; }
-        public AccountType AccountType { get; set; }
-        public string? Currency { get; set; }
+        public AccountType AccountType { get; set; } = AccountType.Unknown;
+        public Currency Currency { get; set; }
         public decimal InitialBalance { get; set; } = 0;
 
         public void Clear()
         {
             Name = string.Empty;
-            AccountType = default;
-            Currency = "SEK";
+            AccountType = AccountType.Deposit;
+            Currency = Currency.SEK;
             InitialBalance = 0;
         }
     }
+    
 }

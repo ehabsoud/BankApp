@@ -3,6 +3,12 @@ namespace HBBank.Domain;
 
 public enum AccountType
 {
-    Savings,
-    Deposit
+    Unknown = 0,
+    Savings = 1,
+    Deposit = 2
+}
+
+public enum Currency
+{
+    SEK = 0
 }
