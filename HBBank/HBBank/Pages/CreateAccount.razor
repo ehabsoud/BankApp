@@ -23,7 +23,7 @@
     <div class="mb-2 d-flex align-items-center">
         <label class="me-2" style="width:120px;">Valuta</label>
         <InputSelect @bind-Value="_model.Currency" class="form-select" style="flex:1">
-            <option value="@Currency.SEK">SEK</option>
+            <option value="@CurrencyType.SEK">SEK</option>
         </InputSelect>
     </div>
 
@@ -37,7 +37,7 @@
 
 <h3 class="mt-4">Kontolista</h3>
 
-@if (accounts == null || accounts.Count == 0)
+@if (_accounts == null || _accounts.Count == 0)
 {
     <p>Inga konton har skapats ännu.</p>
 }
@@ -53,16 +53,16 @@ else
         </tr>
         </thead>
         <tbody>
-        @foreach (var account in accounts)
+        @foreach (var account in _accounts)
         {
             <tr>
                 <td>@account.Name</td>
                 <td>
                     @(account.AccountType switch
                     {
-                    AccountType.Deposit => "Sparkonto",
-                    AccountType.Savings => "Lönekonto",
-                    _ => "Okänd"
+                        AccountType.Savings => "Lönekonto",
+                        AccountType.Deposit => "Sparkonto",
+                        _ => "Okänd"
                     })
                 </td>
                 <td>@account.Balance.ToString("C")</td>
@@ -75,45 +75,42 @@ else
 
 @code {
     private readonly CreateAccountModel _model = new();
-    private List<IBankAccount> accounts = new();
+    private List<IBankAccount> _accounts = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        accounts = AccountService.GetAccounts();
+        _accounts = await AccountService.GetAccounts();
     }
 
-    private Task CreateAccountAsync()
+    private async Task CreateAccountAsync()
     {
         try
         {
-            Console.WriteLine(_model.Name);
-
-            var newAccount = AccountService.CreateAccount(
+            var newAccount = await AccountService.CreateAccount(
                 _model.Name,
                 _model.AccountType,
                 _model.Currency.ToString(),
                 _model.InitialBalance
             );
-            
-            _model.Clear();
 
+            _accounts = await AccountService.GetAccounts();
+            _model.Clear();
             StateHasChanged();
         }
         catch (Exception exception)
         {
             Console.WriteLine(exception);
-            throw;
         }
-
-        return Task.CompletedTask;
     }
 
     private class CreateAccountModel
     {
         [Required(ErrorMessage = "Kontonamn måste anges")]
         public string? Name { get; set; }
+
         public AccountType AccountType { get; set; } = AccountType.Unknown;
-        public Currency Currency { get; set; }
+        public CurrencyType Currency { get; set; }
+
         [Range(0.01, double.MaxValue, ErrorMessage = "Startbelopp måste vara större än 0")]
         public decimal InitialBalance { get; set; } = 0;
 
@@ -121,7 +118,7 @@ else
         {
             Name = string.Empty;
             AccountType = AccountType.Unknown;
-            Currency = Currency.SEK;
+            Currency = CurrencyType.SEK;
             InitialBalance = 0;
         }
     }

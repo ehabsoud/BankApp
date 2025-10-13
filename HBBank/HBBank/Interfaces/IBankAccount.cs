@@ -11,7 +11,7 @@ public interface IBankAccount
     string Currency { get; }
     decimal Balance { get; }
     DateTime LastUpdated { get; }
-    
+
     void Withdraw(decimal amount);
     void Deposit(decimal amount);
 }
