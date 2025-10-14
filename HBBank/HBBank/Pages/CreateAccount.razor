@@ -60,8 +60,8 @@ else
                 <td>
                     @(account.AccountType switch
                     {
-                        AccountType.Savings => "Lönekonto",
-                        AccountType.Deposit => "Sparkonto",
+                        AccountType.Savings => "Sparkonto",
+                        AccountType.Deposit => "Lönekonto",
                         _ => "Okänd"
                     })
                 </td>
