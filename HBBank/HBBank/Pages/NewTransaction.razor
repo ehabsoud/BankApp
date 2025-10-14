@@ -1,0 +1,195 @@
+@page "/newtransaction"
+@using HBBank.Domain
+@inject IAccountService AccountService
+
+<PageTitle>NewTransaction</PageTitle>
+
+<h1>Ny transaktion</h1>
+
+<EditForm Model="_model" OnValidSubmit="SubmitTransactionAsync">
+    <DataAnnotationsValidator/>
+    <ValidationSummary/>
+
+    <div class="mb-2 d-flex align-items-center">
+        <label class="me-2" style="width:120px;">Typ</label>
+        <InputSelect @bind-Value="_model.Type" class="form-select" style="flex:1">
+            <option value="">Välj typ</option>
+            <option value="Deposit">Insättning</option>
+            <option value="Withdraw">Uttag</option>
+            <option value="Transfer">Överföring</option>
+        </InputSelect>
+    </div>
+
+    <div class="mb-2 d-flex align-items-center">
+        <label class="me-2" style="width:120px">Från konto</label>
+        <InputSelect @bind-Value="_model.FromAccountId" TValue="Guid?" class="form-select" style="flex:1">
+            <option value="">Välj konto</option>
+            @foreach (var account in _accounts)
+            {
+                <option value="@account.Id">@account.Name (@account.Balance.ToString("C"))</option>
+            }
+        </InputSelect>
+    </div>
+
+    @if (_model.Type == "Transfer")
+    {
+        <div class="mb-2 d-flex align-items-center">
+            <label class="me-2" style="width:120px">Till konto</label>
+            <InputSelect @bind-Value="_model.ToAccountId" TValue="Guid?" class="form-select" style="flex:1">
+                <option value="">Välj konto</option>
+                @foreach (var account in _accounts.Where(a => a.Id != _model.FromAccountId))
+                {
+                    <option value="@account.Id">@account.Name (@account.Balance.ToString("C"))</option>
+                }
+            </InputSelect>
+        </div>
+    }
+
+    <div class="mb-2 d-flex align-items-center">
+        <label class="me-2" style="width:120px">Belopp</label>
+        <InputNumber @bind-Value="_model.Amount" class="form-control" style="flex:1"/>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Utför transaktion</button>
+
+    @if (!string.IsNullOrEmpty(_errorMessage))
+    {
+        <div class="alert alert-danger mt-2">@_errorMessage</div>
+    }
+</EditForm>
+
+@code
+{
+    private List<IBankAccount> _accounts = new();
+    private string _errorMessage = string.Empty;
+
+    private TransactionModel _model = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _accounts = await AccountService.GetAccounts();
+    }
+
+    private async Task SubmitTransactionAsync()
+    {
+        _errorMessage = string.Empty;
+
+        if (string.IsNullOrEmpty(_model.Type))
+        {
+            _errorMessage = "Välj typ av transaktion.";
+            return;
+        }
+
+        if (!_model.FromAccountId.HasValue)
+        {
+            _errorMessage = "Välj ett giltigt konto att genomföra transaktionen från.";
+            return;
+        }
+
+        var fromAccount = _accounts.FirstOrDefault(a => a.Id == _model.FromAccountId.Value);
+        if (fromAccount == null)
+        {
+            _errorMessage = "Välj ett giltigt konto.";
+            return;
+        }
+        
+        IBankAccount? toAccount = null;
+        if (_model.Type == "Transfer")
+        {
+            if (!_model.ToAccountId.HasValue)
+            {
+                _errorMessage = "Välj ett giltigt mottagarkonto.";
+                return;
+            }
+
+            toAccount = _accounts.FirstOrDefault(a => a.Id == _model.ToAccountId.Value);
+            if (toAccount == null)
+            {
+                _errorMessage = "Välj ett giltigt mottagarkonto.";
+                return;
+            }
+        }
+
+        if (_model.Amount <= 0)
+        {
+            _errorMessage = "Belopp måste vara större än 0.";
+            return;
+        }
+
+        try
+        {
+            if (_model.Type == "Deposit")
+            {
+                fromAccount.Deposit(_model.Amount);
+                await AccountService.AddTransaction(new Transaction
+                {
+                    AccountId = fromAccount.Id,
+                    Amount = _model.Amount,
+                    Type = "Deposit",
+                    BalanceAfter = fromAccount.Balance
+                });
+            }
+            else if (_model.Type == "Withdraw")
+            {
+                if (_model.Amount > fromAccount.Balance)
+                {
+                    _errorMessage = "Otillräckligt saldo.";
+                    return;
+                }
+
+                fromAccount.Withdraw(_model.Amount);
+                await AccountService.AddTransaction(new Transaction
+                {
+                    AccountId = fromAccount.Id,
+                    Amount = _model.Amount,
+                    Type = "Withdraw",
+                    BalanceAfter = fromAccount.Balance
+                });
+            }
+            else if (_model.Type == "Transfer" && toAccount != null)
+            {
+                if (_model.Amount > fromAccount.Balance)
+                {
+                    _errorMessage = "Otillräckligt saldo för överföring.";
+                    return;
+                }
+
+                fromAccount.Withdraw(_model.Amount);
+                toAccount.Deposit(_model.Amount);
+
+                await AccountService.AddTransaction(new Transaction
+                {
+                    AccountId = fromAccount.Id,
+                    ToAccountId = toAccount.Id,
+                    Amount = _model.Amount,
+                    Type = "Transfer",
+                    BalanceAfter = fromAccount.Balance
+                });
+
+                await AccountService.AddTransaction(new Transaction
+                {
+                    AccountId = toAccount.Id,
+                    ToAccountId = fromAccount.Id,
+                    Amount = _model.Amount,
+                    Type = "Transfer",
+                    BalanceAfter = toAccount.Balance
+                });
+            }
+
+            await AccountService.SaveAccounts();
+            _model = new TransactionModel();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+    }
+
+    private class TransactionModel 
+    { 
+        public string Type { get; set; } = string.Empty;
+        public Guid? FromAccountId { get; set; }
+        public Guid? ToAccountId { get; set; }
+        public decimal Amount { get; set; }
+    }
+}
