@@ -1,16 +1,25 @@
 ﻿@inherits LayoutComponentBase
-<div class="page">
-    <div class="sidebar">
+
+<div class="d-flex flex-column flex-md-row min-vh-100">
+    <!-- SIDOMENY -->
+    <nav class="bg-dark text-white p-3 flex-shrink-0" style="width: 250px;">
+        <h4 class="text-center mb-4">HB Bank</h4>
         <NavMenu/>
-    </div>
+    </nav>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+    <!-- HUVUDINNEHÅLL -->
+    <div class="flex-grow-1 d-flex flex-column">
+        <!-- TOPPBAR -->
+        <header class="d-flex justify-content-between align-items-center bg-light shadow-sm p-3">
+            <span class="fw-bold">Välkommen till HB Bank</span>
+            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank" class="text-decoration-none">
+                About
+            </a>
+        </header>
 
-        <article class="content px-4">
+        <!-- SIDINNEHÅLL -->
+        <main class="flex-grow-1 bg-light p-4" style="overflow-y:auto;">
             @Body
-        </article>
-    </main>
+        </main>
+    </div>
 </div>
