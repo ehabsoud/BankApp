@@ -1,7 +1,57 @@
 @page "/accounts"
+@using System.Diagnostics
+@inject IAccountService AccountService
 
-<PageTitle>Accounts</PageTitle>
+<h3>Alla konton</h3>
 
-<h1>Accounts</h1>
+@if (_accounts == null)
+{
+    <p>Laddar konton...</p>
+}
+else if (!_accounts.Any())
+{
+    <p>Inga konton hittades.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th style="width:200px;">Kontonamn</th>
+            <th style="width:150px;">Kontotyp</th>
+            <th style="width:120px;">Saldo</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var account in _accounts)
+        {
+            <tr>
+                <td>@account.Name</td>
+                <td>@GetAccountTypeDisplay(account.AccountType)</td>
+                <td>@account.Balance.ToString("C")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
 
+@code {
+    private List<IBankAccount> _accounts;
 
+    protected override async Task OnInitializedAsync()
+    {
+        _accounts = await AccountService.GetAccounts();
+    }
+
+    private string GetAccountTypeDisplay(AccountType type)
+    {
+        return type switch
+        {
+            AccountType.Savings => "Sparkonto",
+            AccountType.Deposit => "Lönekonto",
+            AccountType.Unknown => "Okänt konto",
+            _ => "Okänt konto"
+        };
+    }
+
+}

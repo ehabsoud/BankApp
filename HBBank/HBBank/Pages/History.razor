@@ -12,6 +12,17 @@
     </InputSelect>
 </div>
 
+<div class="mb-2 d-flex align-items-center">
+    <label class="me-2" style="width:120px;">Välj konto</label>
+    <InputSelect @bind-Value="_selectedAccountId" class="form-select" style="flex:1">
+        <option value="">Alla konton</option>
+        @foreach (var account in _accounts)
+        {
+            <option value="@account.Id">@account.Name</option>
+        }
+    </InputSelect>
+</div>
+
 @if (string.IsNullOrEmpty(_selectedFilter))
 {
     <p>Välj en typ av transaktion ovan för att visa historik.</p>
@@ -25,27 +36,48 @@ else
     <table class="table table-striped">
         <thead>
         <tr>
-            <th style="width:130px">Datum</th>
+            <th style="width:130px; cursor:pointer;" @onclick="() => SortByColumn(nameof(Transaction.Date))">
+                Datum <span>@GetSortArrow(nameof(Transaction.Date))</span>
+            </th>
             <th style="width:120px;">Typ</th>
-            <th style="width:160px;">Från konto</th>
-            <th style="width:160px;">Till konto</th>
+
+            @if (_selectedFilter == "DepositWithdraw")
+            {
+                <th style="width:200px;">Konto</th>
+            }
+            else
+            {
+                <th style="width:160px;">Från konto</th>
+                <th style="width:160px;">Till konto</th>
+            }
+
+            <th style="width:110px; cursor:pointer;" @onclick="() => SortByColumn(nameof(Transaction.Amount))">
+                Belopp <span>@GetSortArrow(nameof(Transaction.Amount))</span>
+            </th>
+
             <th style="width:110px;">Saldo innan</th>
-            <th style="width:110px;">Belopp</th>
             <th style="width:110px;">Saldo efter</th>
         </tr>
         </thead>
         <tbody>
-        @foreach (var transaction in _transactions.Where(t =>
-                      (_selectedFilter == "DepositWithdraw" && (t.Type == "Deposit" || t.Type == "Withdraw")) ||
-                      (_selectedFilter == "Transfer" && t.Type == "Transfer")))
+        @foreach (var transaction in FilteredTransactions())
         {
             <tr>
                 <td>@transaction.Date.ToString("yyyy-MM-dd HH:mm")</td>
                 <td>@GetTransactionTypeDisplay(transaction.Type)</td>
-                <td>@GetFromAccount(transaction)</td>
-                <td>@GetToAccount(transaction)</td>
-                <td>@transaction.BalanceBefore.ToString("C")</td>
+
+                @if (_selectedFilter == "DepositWithdraw")
+                {
+                    <td>@GetToAccount(transaction)</td>
+                }
+                else
+                {
+                    <td>@GetFromAccount(transaction)</td>
+                    <td>@GetToAccount(transaction)</td>
+                }
+
                 <td>@transaction.Amount.ToString("C")</td>
+                <td>@transaction.BalanceBefore.ToString("C")</td>
                 <td>@transaction.BalanceAfter.ToString("C")</td>
             </tr>
         }
@@ -56,59 +88,113 @@ else
 @code {
     private List<Transaction> _transactions = new();
     private List<IBankAccount> _accounts = new();
-
     private string _selectedFilter = string.Empty;
+    private Guid? _selectedAccountId = null; // NYTT: valt konto
+
+    private string _sortColumn = nameof(Transaction.Date);
+    private bool _sortAscending = false;
 
     protected override async Task OnInitializedAsync()
     {
         _accounts = await AccountService.GetAccounts();
-        _transactions = new List<Transaction>();
+        var allTransactions = new List<Transaction>();
 
         foreach (var account in _accounts)
         {
             var accTransactions = await AccountService.GetTransactions(account.Id);
-            _transactions.AddRange(accTransactions);
+            allTransactions.AddRange(accTransactions);
         }
 
-        _transactions = _transactions
-            .GroupBy(t => t.Id) // Grupp efter unikt transaktions-id
-            .Select(g => g.First()) // Ta bara första transaktionen i varje grupp
-            .OrderByDescending(t => t.Date)
+        // Ta bort dubletter
+        _transactions = allTransactions
+            .GroupBy(t => t.Id)
+            .Select(g => g.First())
             .ToList();
+
+        // Sortera initialt
+        SortTransactions();
     }
 
-    private string GetTransactionTypeDisplay(string type)
+    private IEnumerable<Transaction> FilteredTransactions()
     {
-        return type switch
+        var filtered = _transactions.Where(t =>
+            (_selectedFilter == "DepositWithdraw" && (t.Type == "Deposit" || t.Type == "Withdraw")) ||
+            (_selectedFilter == "Transfer" && t.Type == "Transfer"));
+
+        if (_selectedAccountId.HasValue)
         {
-            "Deposit" => "Insättning",
-            "Withdraw" => "Uttag",
-            "Transfer" => "Överföring",
-            _ => type
+            filtered = filtered.Where(t =>
+                (_selectedFilter == "DepositWithdraw" && t.AccountId == _selectedAccountId) ||
+                (_selectedFilter == "Transfer" && (t.AccountId == _selectedAccountId || t.ToAccountId == _selectedAccountId))
+            );
+        }
+
+        return filtered;
+    }
+
+    private void SortByColumn(string columnName)
+    {
+        if (_sortColumn == columnName)
+        {
+            _sortAscending = !_sortAscending;
+        }
+        else
+        {
+            _sortColumn = columnName;
+            _sortAscending = true;
+        }
+        SortTransactions();
+    }
+
+    private void SortTransactions()
+    {
+        _transactions = _sortColumn switch
+        {
+            nameof(Transaction.Date) => _sortAscending
+                ? _transactions.OrderBy(t => t.Date).ToList()
+                : _transactions.OrderByDescending(t => t.Date).ToList(),
+            nameof(Transaction.Amount) => _sortAscending
+                ? _transactions.OrderBy(t => t.Amount).ToList()
+                : _transactions.OrderByDescending(t => t.Amount).ToList(),
+            _ => _transactions
         };
     }
 
-    private string GetFromAccount(Transaction transaction)
+    private string GetSortArrow(string columnName)
     {
-        return transaction.Type switch
+        if (_sortColumn == columnName)
         {
-            "Deposit" => "-", // insättning kommer in
-            "Withdraw" => _accounts.FirstOrDefault(a => a.Id == transaction.AccountId)?.Name ?? "-",
-            "Transfer" => _accounts.FirstOrDefault(a => a.Id == transaction.AccountId)?.Name ?? "-",
-            _ => "-"
-        };
+            return _sortAscending ? "▲" : "▼";
+        }
+        else
+        {
+            return "▲";
+        }
     }
 
-    private string GetToAccount(Transaction transaction)
+    private string GetTransactionTypeDisplay(string type) => type switch
     {
-        return transaction.Type switch
-        {
-            "Deposit" => _accounts.FirstOrDefault(a => a.Id == transaction.AccountId)?.Name ?? "-",
-            "Withdraw" => "-",
-            "Transfer" => transaction.ToAccountId.HasValue
-                ? _accounts.FirstOrDefault(a => a.Id == transaction.ToAccountId.Value)?.Name ?? "-"
-                : "-",
-            _ => "-"
-        };
-    }
+        "Deposit" => "Insättning",
+        "Withdraw" => "Uttag",
+        "Transfer" => "Överföring",
+        _ => type
+    };
+
+    private string GetFromAccount(Transaction transaction) => transaction.Type switch
+    {
+        "Deposit" => "-",
+        "Withdraw" => _accounts.FirstOrDefault(a => a.Id == transaction.AccountId)?.Name ?? "-",
+        "Transfer" => _accounts.FirstOrDefault(a => a.Id == transaction.AccountId)?.Name ?? "-",
+        _ => "-"
+    };
+
+    private string GetToAccount(Transaction transaction) => transaction.Type switch
+    {
+        "Deposit" => _accounts.FirstOrDefault(a => a.Id == transaction.AccountId)?.Name ?? "-",
+        "Withdraw" => _accounts.FirstOrDefault(a => a.Id == transaction.AccountId)?.Name ?? "-",
+        "Transfer" => transaction.ToAccountId.HasValue
+            ? _accounts.FirstOrDefault(a => a.Id == transaction.ToAccountId.Value)?.Name ?? "-"
+            : "-",
+        _ => "-"
+    };
 }
