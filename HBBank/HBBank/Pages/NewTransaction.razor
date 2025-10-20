@@ -92,7 +92,7 @@
             _errorMessage = "Välj ett giltigt konto.";
             return;
         }
-        
+
         IBankAccount? toAccount = null;
         if (_model.Type == "Transfer")
         {
@@ -120,12 +120,15 @@
         {
             if (_model.Type == "Deposit")
             {
+                decimal balanceBefore = fromAccount.Balance;
+
                 fromAccount.Deposit(_model.Amount);
                 await AccountService.AddTransaction(new Transaction
                 {
                     AccountId = fromAccount.Id,
                     Amount = _model.Amount,
                     Type = "Deposit",
+                    BalanceBefore = balanceBefore,
                     BalanceAfter = fromAccount.Balance
                 });
             }
@@ -137,12 +140,15 @@
                     return;
                 }
 
+                decimal balanceBefore = fromAccount.Balance;
+
                 fromAccount.Withdraw(_model.Amount);
                 await AccountService.AddTransaction(new Transaction
                 {
                     AccountId = fromAccount.Id,
                     Amount = _model.Amount,
                     Type = "Withdraw",
+                    BalanceBefore = balanceBefore,
                     BalanceAfter = fromAccount.Balance
                 });
             }
@@ -154,6 +160,8 @@
                     return;
                 }
 
+                decimal fromBalanceBefore = fromAccount.Balance;
+                
                 fromAccount.Withdraw(_model.Amount);
                 toAccount.Deposit(_model.Amount);
 
@@ -163,16 +171,8 @@
                     ToAccountId = toAccount.Id,
                     Amount = _model.Amount,
                     Type = "Transfer",
+                    BalanceBefore = fromBalanceBefore,
                     BalanceAfter = fromAccount.Balance
-                });
-
-                await AccountService.AddTransaction(new Transaction
-                {
-                    AccountId = toAccount.Id,
-                    ToAccountId = fromAccount.Id,
-                    Amount = _model.Amount,
-                    Type = "Transfer",
-                    BalanceAfter = toAccount.Balance
                 });
             }
 
@@ -185,8 +185,8 @@
         }
     }
 
-    private class TransactionModel 
-    { 
+    private class TransactionModel
+    {
         public string Type { get; set; } = string.Empty;
         public Guid? FromAccountId { get; set; }
         public Guid? ToAccountId { get; set; }

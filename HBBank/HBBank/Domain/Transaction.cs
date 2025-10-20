@@ -8,5 +8,7 @@ public class Transaction
     public decimal Amount { get; set; }          // belopp
     public string Type { get; set; }             // "Deposit", "Withdraw", "Transfer"
     public DateTime Date { get; set; } = DateTime.Now;
+    
+    public decimal BalanceBefore { get; set; } // saldo före transaktion
     public decimal BalanceAfter { get; set; }    // saldo efter transaktion
 }

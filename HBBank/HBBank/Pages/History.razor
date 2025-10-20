@@ -1,5 +1,96 @@
 @page "/history"
+@inject IAccountService AccountService
 
-<PageTitle>History</PageTitle>
+<h3>Transaktionshistorik</h3>
 
-<h1>History</h1>
+@if (_transactions == null || !_transactions.Any())
+{
+    <p>Inga transaktioner hittades.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Datum</th>
+                <th>Typ</th>
+                <th>Från konto</th>
+                <th>Till konto</th>
+                <th>Saldo innan</th>
+                <th>Belopp</th>
+                <th>Saldo efter</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var transaction in _transactions)
+            {
+                <tr>
+                    <td>@transaction.Date.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@GetTransactionTypeDisplay(transaction.Type)</td>
+                    <td>@GetFromAccount(transaction)</td>
+                    <td>@GetToAccount(transaction)</td>
+                    <td>@transaction.BalanceBefore.ToString("C")</td>
+                    <td>@transaction.Amount.ToString("C")</td>
+                    <td>@transaction.BalanceAfter.ToString("C")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Transaction> _transactions = new();
+    private List<IBankAccount> _accounts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _accounts = await AccountService.GetAccounts();
+        _transactions = new List<Transaction>();
+
+        foreach (var account in _accounts)
+        {
+            var accTransactions = await AccountService.GetTransactions(account.Id);
+            _transactions.AddRange(accTransactions);
+        }
+
+        _transactions = _transactions
+            .GroupBy(t => t.Id)       // Grupp efter unikt transaktions-id
+            .Select(g => g.First())   // Ta bara första transaktionen i varje grupp
+            .OrderByDescending(t => t.Date)
+            .ToList();
+    }
+    private string GetTransactionTypeDisplay(string type)
+    {
+        return type switch
+        {
+            "Deposit" => "Insättning",
+            "Withdraw" => "Uttag",
+            "Transfer" => "Överföring",
+            _ => type
+        };
+    }
+    
+    private string GetFromAccount(Transaction transaction)
+    {
+        return transaction.Type switch
+        {
+            "Deposit" => "-", // insättning kommer in, inget från konto
+            "Withdraw" => _accounts.FirstOrDefault(a => a.Id == transaction.AccountId)?.Name ?? "-",
+            "Transfer" => _accounts.FirstOrDefault(a => a.Id == transaction.AccountId)?.Name ?? "-",
+            _ => "-"
+        };
+    }
+
+    private string GetToAccount(Transaction transaction)
+    {
+        return transaction.Type switch
+        {
+            "Deposit" => _accounts.FirstOrDefault(a => a.Id == transaction.AccountId)?.Name ?? "-",
+            "Withdraw" => "-", // uttag går bort, inget till konto
+            "Transfer" => transaction.ToAccountId.HasValue 
+                ? _accounts.FirstOrDefault(a => a.Id == transaction.ToAccountId.Value)?.Name ?? "-"
+                : "-",
+            _ => "-"
+        };
+    }
+}
