@@ -27,7 +27,7 @@
             @foreach (var account in _accounts)
             {
                 <option value="@account.Id">
-                    @account.Name (@GetAccountTypeDisplay(account.AccountType))
+                    @account.Name (@GetAccountTypeDisplay(account.AccountType)) - @account.Balance.ToString("C")
                 </option>
             }
         </InputSelect>
@@ -42,7 +42,7 @@
                 @foreach (var account in _accounts.Where(a => a.Id != _model.FromAccountId))
                 {
                     <option value="@account.Id">
-                        @account.Name (@GetAccountTypeDisplay(account.AccountType))
+                        @account.Name (@GetAccountTypeDisplay(account.AccountType)) - @account.Balance.ToString("C")
                     </option>
                 }
             </InputSelect>
