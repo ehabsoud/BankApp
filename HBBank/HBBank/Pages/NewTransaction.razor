@@ -26,7 +26,9 @@
             <option value="">Välj konto</option>
             @foreach (var account in _accounts)
             {
-                <option value="@account.Id">@account.Name (@account.Balance.ToString("C"))</option>
+                <option value="@account.Id">
+                    @account.Name (@GetAccountTypeDisplay(account.AccountType))
+                </option>
             }
         </InputSelect>
     </div>
@@ -39,7 +41,9 @@
                 <option value="">Välj konto</option>
                 @foreach (var account in _accounts.Where(a => a.Id != _model.FromAccountId))
                 {
-                    <option value="@account.Id">@account.Name (@account.Balance.ToString("C"))</option>
+                    <option value="@account.Id">
+                        @account.Name (@GetAccountTypeDisplay(account.AccountType))
+                    </option>
                 }
             </InputSelect>
         </div>
@@ -183,6 +187,17 @@
         {
             _errorMessage = ex.Message;
         }
+    }
+
+    private string GetAccountTypeDisplay(AccountType type)
+    {
+        return type switch
+        {
+            AccountType.Savings => "Sparkonto",
+            AccountType.Deposit => "Lönekonto",
+            AccountType.Unknown => "Okänt konto",
+            _ => "Okänt konto"
+        };
     }
 
     private class TransactionModel

@@ -18,7 +18,7 @@
         <option value="">Alla konton</option>
         @foreach (var account in _accounts)
         {
-            <option value="@account.Id">@account.Name</option>
+            <option value="@account.Id">@account.Name (@GetAccountTypeDisplay(account.AccountType))</option>
         }
     </InputSelect>
 </div>
@@ -89,7 +89,7 @@ else
     private List<Transaction> _transactions = new();
     private List<IBankAccount> _accounts = new();
     private string _selectedFilter = string.Empty;
-    private Guid? _selectedAccountId = null; // NYTT: valt konto
+    private Guid? _selectedAccountId = null;
 
     private string _sortColumn = nameof(Transaction.Date);
     private bool _sortAscending = false;
@@ -111,7 +111,6 @@ else
             .Select(g => g.First())
             .ToList();
 
-        // Sortera initialt
         SortTransactions();
     }
 
@@ -180,21 +179,41 @@ else
         _ => type
     };
 
-    private string GetFromAccount(Transaction transaction) => transaction.Type switch
+    private string GetFromAccount(Transaction transaction)
     {
-        "Deposit" => "-",
-        "Withdraw" => _accounts.FirstOrDefault(a => a.Id == transaction.AccountId)?.Name ?? "-",
-        "Transfer" => _accounts.FirstOrDefault(a => a.Id == transaction.AccountId)?.Name ?? "-",
-        _ => "-"
-    };
+        var account = _accounts.FirstOrDefault(a => a.Id == transaction.AccountId);
+        var nameWithType = account != null ? $"{account.Name} ({GetAccountTypeDisplay(account.AccountType)})" : "-";
 
-    private string GetToAccount(Transaction transaction) => transaction.Type switch
+        return transaction.Type switch
+        {
+            "Deposit" => "-",
+            "Withdraw" => nameWithType,
+            "Transfer" => nameWithType,
+            _ => "-"
+        };
+    }
+
+    private string GetToAccount(Transaction transaction)
     {
-        "Deposit" => _accounts.FirstOrDefault(a => a.Id == transaction.AccountId)?.Name ?? "-",
-        "Withdraw" => _accounts.FirstOrDefault(a => a.Id == transaction.AccountId)?.Name ?? "-",
-        "Transfer" => transaction.ToAccountId.HasValue
-            ? _accounts.FirstOrDefault(a => a.Id == transaction.ToAccountId.Value)?.Name ?? "-"
-            : "-",
-        _ => "-"
+        if (transaction.Type == "Deposit" || transaction.Type == "Withdraw")
+        {
+            var account = _accounts.FirstOrDefault(a => a.Id == transaction.AccountId);
+            return account != null ? $"{account.Name} ({GetAccountTypeDisplay(account.AccountType)})" : "-";
+        }
+        else if (transaction.Type == "Transfer" && transaction.ToAccountId.HasValue)
+        {
+            var account = _accounts.FirstOrDefault(a => a.Id == transaction.ToAccountId.Value);
+            return account != null ? $"{account.Name} ({GetAccountTypeDisplay(account.AccountType)})" : "-";
+        }
+
+        return "-";
+    }
+
+    private string GetAccountTypeDisplay(AccountType type) => type switch
+    {
+        AccountType.Savings => "Sparkonto",
+        AccountType.Deposit => "Lönekonto",
+        AccountType.Unknown => "Okänt konto",
+        _ => "Okänt konto"
     };
 }
