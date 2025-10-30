@@ -6,45 +6,31 @@ namespace HBBank.Interfaces;
 /// </summary>
 public interface IBankAccount
 {
-    /// <summary>
-    /// Gets the unique identifier of the account.
-    /// </summary>
+    // Gets the unique identifier of the account.
     Guid Id { get; }
 
-    /// <summary>
-    /// Gets the name of the account.
-    /// </summary>
+    // Gets the name of the account.
     string Name { get; }
 
-    /// <summary>
-    /// Gets the type of account (e.g., Savings, Deposit).
-    /// </summary>
+
+    // Gets the type of account (e.g., Savings, Deposit).
     AccountType AccountType { get; }
 
-    /// <summary>
-    /// Gets the type of currency used by the account.
-    /// </summary>
+    // Gets the type of currency used by the account.
     string Currency { get; }
 
-    /// <summary>
-    /// Gets the current balance of the account.
-    /// </summary>
+
+    // Gets the current balance of the account.
     decimal Balance { get; }
 
-    /// <summary>
-    /// Gets the timestamp of the last update to the account.
-    /// </summary>
+    // Gets the timestamp of the last update to the account.
     DateTime LastUpdated { get; }
 
-    /// <summary>
-    /// The amount to withdraw.
-    /// </summary>
-    /// <param name="amount">The amount to withdraw.</param>
+
+    // The amount to withdraw.
     void Withdraw(decimal amount);
 
-    /// <summary>
-    /// The amount to deposit. 
-    /// </summary>
-    /// <param name="amount"></param>
+
+    // The amount to deposit. 
     void Deposit(decimal amount);
 }

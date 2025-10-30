@@ -9,39 +9,18 @@ namespace HBBank.Interfaces;
 /// </summary>
 public interface IAccountService
 {
-    /// <summary>
-    /// Creates a new bank account with the specified details.
-    /// </summary>
-    /// <param name="name">The name of the account.</param>
-    /// <param name="accountType">The type of account (e.g., Savings, Deposit).</param>
-    /// <param name="currency">The currency used by the account.</param>
-    /// <param name="initialBalance">The initial balance for the account.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the created <see cref="IBankAccount"/>.</returns>
+    // Creates a new bank account with the specified data.
     Task<IBankAccount> CreateAccount(string name, AccountType accountType, string currency, decimal initialBalance);
 
-    /// <summary>
-    /// Retrieve all bank accounts.
-    /// </summary>
-    /// <returns>A task that represents the asynchronous operation. The task result contains a list of <see cref="IBankAccount"/>.</returns>
+    // Retrieves all bank accounts.
     Task<List<IBankAccount>> GetAccounts();
 
-    /// <summary>
-    /// Adds a transaction for a specified account. 
-    /// </summary>
-    /// <param name="transaction">The <see cref="Transaction"/> to add.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
+    // Adds a transaction for a specified account.
     Task AddTransaction(Transaction transaction);
 
-    /// <summary>
-    /// Retrieves all transactions for a specified account.
-    /// </summary>
-    /// <param name="accountId">The unique identifier of the account.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains a list of <see cref="Transaction"/>.</returns>
+    // Retrieves all transactions for a specified account
     Task<List<Transaction>> GetTransactions(Guid accountId);
 
-    /// <summary>
-    /// Saves all account data persistently. 
-    /// </summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
+    // Saves all account data persistently. 
     Task SaveAccounts();
 }
