@@ -14,6 +14,7 @@ public class BankAccount : IBankAccount
     public string Currency { get; private set; }
     public decimal Balance { get; private set; }
     public DateTime LastUpdated { get; private set; }
+    public DateTime LastInterestApplied { get; private set; } = DateTime.Now;
 
     /// <summary>
     /// Creates a new bank account with the specified name, type, currency and initial balance.
@@ -73,5 +74,30 @@ public class BankAccount : IBankAccount
 
         Balance += amount;
         LastUpdated = DateTime.Now;
+    }
+
+    /// <summary>
+    /// Applies interest to the account if it is a savings account.
+    /// Interest is 10% per minute, applied based on elapsed time since last application.
+    /// </summary>
+    public void ApplyInterest()
+    {
+        if (AccountType != AccountType.Savings)
+            return; // Only apply to savings accounts
+
+        var now = DateTime.Now;
+        var minutesElapsed = (now - LastInterestApplied).TotalMinutes;
+
+        if (minutesElapsed >= 1)
+        {
+            // Apply 10% per minute elapsed 
+            for (int i = 0; i < (int)minutesElapsed; i++)
+            {
+                Balance += Balance * 0.10m;
+            }
+
+            LastInterestApplied = now; // Update last applied timestamp
+            LastUpdated = now; // Update last updated timestamp
+        }
     }
 }

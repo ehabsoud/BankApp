@@ -1,6 +1,8 @@
 @page "/accounts"
 @using System.Diagnostics
+@using System.Threading;
 @inject IAccountService AccountService
+@implements IDisposable
 
 <!--
     Displays a list of all available bank accounts.
@@ -22,26 +24,26 @@ else
 {
     <!-- Display table of accounts when data is available -->
     <table class="table table-striped">
-    <thead>
-    <tr>
-        <!-- Column headers for account information -->
-        <th style="width:200px;">Kontonamn</th>
-        <th style="width:150px;">Kontotyp</th>
-        <th style="width:120px;">Saldo</th>
-    </tr>
-    </thead>
-    <tbody>
-    @foreach (var account in _accounts)
-    {
+        <thead>
         <tr>
-            <!-- Display account details: name, type, and balance -->
-            <td>@account.Name</td>
-            <td>@GetAccountTypeDisplay(account.AccountType)</td>
-            <td>@account.Balance.ToString("C")</td>
+            <!-- Column headers for account information -->
+            <th style="width:200px;">Kontonamn</th>
+            <th style="width:150px;">Kontotyp</th>
+            <th style="width:120px;">Saldo</th>
         </tr>
-    }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+        @foreach (var account in _accounts)
+        {
+            <tr>
+                <!-- Display account details: name, type, and balance -->
+                <td>@account.Name</td>
+                <td>@GetAccountTypeDisplay(account.AccountType)</td>
+                <td>@account.Balance.ToString("C")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
 }
 
 @code {
@@ -52,12 +54,54 @@ else
     private List<IBankAccount> _accounts;
 
     /// <summary>
+    /// Timer that applies interest to savings accounts every minute.
+    /// If any balances change, the updated accounts are saved and the UI is refreshed.
+    /// </summary>
+    private Timer? _timer;
+
+    /// <summary>
     /// Called when the component is initialized.
-    /// Fetches all available accounts asynchronously using the injected AccountService.
+    /// Fetches all accounts from AccountService and sets up a timer that applies interest
+    /// to savings accounts every minute. If any balances change, the updates are saved
+    /// and the UI is refreshed.
     /// </summary>
     protected override async Task OnInitializedAsync()
     {
         _accounts = await AccountService.GetAccounts();
+
+        // Initialize timer to run ApplyInterest every minute
+        _timer = new Timer(async _ =>
+        {
+            bool anyChanged = false;
+
+            // Loop through all accounts that are of type BankAccount
+            foreach (var account in _accounts.OfType<BankAccount>())
+            {
+                decimal oldBalance = account.Balance;
+
+                // Apply interest if applicable
+                account.ApplyInterest();
+
+                // Check if balance has changed
+                if (account.Balance != oldBalance)
+                    anyChanged = true;
+            }
+
+            // If any account balance changed, save accounts and refresh UI
+            if (anyChanged)
+            {
+                await AccountService.SaveAccounts();
+                await InvokeAsync(StateHasChanged);
+            }
+        }, null, TimeSpan.Zero, TimeSpan.FromMinutes(1));
+    }
+
+    /// <summary>
+    /// Disposes the timer when the component is destroyed to prevent memory leaks.
+    /// </summary>
+    public void Dispose()
+    {
+        _timer?.Dispose();
     }
 
     /// <summary>

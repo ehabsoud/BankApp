@@ -78,11 +78,29 @@ public class AccountService : IAccountService
 
     /// <summary>
     /// Retrieves all existing bank accounts.
+    /// Applies interest to savings accounts before returning the list.
+    /// If any balances change due to interest, the accounts are saved to storage.
     /// </summary>
-    /// <returns>A list of <see cref="IBankAccount"/> objects.</returns>
+    /// <returns>A list of <see cref="IBankAccount"/> objects with updated balances.</returns>
     public async Task<List<IBankAccount>> GetAccounts()
     {
         await IsInitialized();
+
+        bool anyChanged = false;
+
+        foreach (var account in _accounts.OfType<BankAccount>())
+        {
+            decimal oldBalance = account.Balance;
+            account.ApplyInterest();
+            if (account.Balance != oldBalance)
+                anyChanged = true;
+        }
+
+        if (anyChanged)
+        {
+            await SaveAsync();
+        }
+
         return _accounts.Cast<IBankAccount>().ToList();
     }
 
