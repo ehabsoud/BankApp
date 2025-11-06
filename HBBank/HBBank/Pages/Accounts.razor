@@ -4,29 +4,34 @@
 @inject IAccountService AccountService
 @implements IDisposable
 
-<!--
-    Displays a list of all available bank accounts.
-    If no accounts exist, shows a message instead of the table.
--->
 <h3>Alla konton</h3>
 
-@if (_accounts == null)
+@if (!_isUnlocked)
 {
-    <!-- Display loading message while accounts are being fetched -->
+    <!-- PIN lock UI -->
+    <div class="pin-lock">
+        <p>Ange PIN för att komma åt konton (1234):</p>
+        <input @bind="_pinInput" type="password"/>
+        <button @onclick="UnlockAccounts">Lås upp</button>
+        @if (!string.IsNullOrEmpty(_pinMessage))
+        {
+            <p style="color:red">@_pinMessage</p>
+        }
+    </div>
+}
+else if (_accounts == null)
+{
     <p>Laddar konton...</p>
 }
 else if (!_accounts.Any())
 {
-    <!-- Display message if no accounts are found -->
     <p>Inga konton hittades.</p>
 }
 else
 {
-    <!-- Display table of accounts when data is available -->
     <table class="table table-striped">
         <thead>
         <tr>
-            <!-- Column headers for account information -->
             <th style="width:200px;">Kontonamn</th>
             <th style="width:150px;">Kontotyp</th>
             <th style="width:120px;">Saldo</th>
@@ -36,7 +41,6 @@ else
         @foreach (var account in _accounts)
         {
             <tr>
-                <!-- Display account details: name, type, and balance -->
                 <td>@account.Name</td>
                 <td>@GetAccountTypeDisplay(account.AccountType)</td>
                 <td>@account.Balance.ToString("C")</td>
@@ -47,6 +51,12 @@ else
 }
 
 @code {
+
+    // PIN code lock variables
+    private string _pinInput = ""; // Holds the user input for PIN
+    private const string _correctPin = "1234"; // Hardcoded correct PIN
+    private bool _isUnlocked = false; // Tracks if accounts are unlocked
+    private string _pinMessage = ""; // Message shown for incorrect PIN
 
     /// <summary>
     /// Holds the list of accounts retrieved from the account service.
@@ -118,6 +128,25 @@ else
             AccountType.Unknown => "Okänt konto", // Unknown account.
             _ => "Okänt konto"
         };
+    }
+
+    /// <summary>
+    /// Attempts to unlock the accounts view using the entered PIN code.
+    /// If the entered PIN matches the correct PIN, the accounts are unlocked.
+    /// Otherwise, an error message is displayed and the input is cleared.
+    /// </summary>
+    private void UnlockAccounts()
+    {
+        if (_pinInput == _correctPin)
+        {
+            _isUnlocked = true;
+            _pinMessage = "";
+        }
+        else
+        {
+            _pinMessage = "Fel PIN. Försök igen.";
+            _pinInput = "";
+        }
     }
 
 }
