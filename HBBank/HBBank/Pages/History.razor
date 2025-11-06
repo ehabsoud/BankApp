@@ -1,8 +1,11 @@
 @page "/history"
 @inject IAccountService AccountService
 
+<!-- Page displaying transaction history for bank accounts -->
+
 <h3>Transaktionshistorik</h3>
 
+<!-- Filter by transaction type -->
 <div class="mb-2 d-flex align-items-center">
     <label class="me-2" style="width:120px;">Typ av transaktion</label>
     <InputSelect @bind-Value="_selectedFilter" class="form-select" style="flex:1">
@@ -12,6 +15,7 @@
     </InputSelect>
 </div>
 
+<!-- Filter by account -->
 <div class="mb-2 d-flex align-items-center">
     <label class="me-2" style="width:120px;">Välj konto</label>
     <InputSelect @bind-Value="_selectedAccountId" class="form-select" style="flex:1">
@@ -25,22 +29,28 @@
 
 @if (string.IsNullOrEmpty(_selectedFilter))
 {
+    <!-- Show message if no filter is selected -->
     <p>Välj en typ av transaktion ovan för att visa historik.</p>
 }
 else if (!_transactions.Any())
 {
+    <!-- Show message if no transactions are found -->
     <p>Inga transaktioner hittades.</p>
 }
 else
 {
+    <!-- Display table of transactions when data is available -->
     <table class="table table-striped">
         <thead>
         <tr>
+            <!-- Sortable column: Date -->
             <th style="width:130px; cursor:pointer;" @onclick="() => SortByColumn(nameof(Transaction.Date))">
                 Datum <span>@GetSortArrow(nameof(Transaction.Date))</span>
             </th>
+            <!-- Transaction type column -->
             <th style="width:120px;">Typ</th>
 
+            <!-- Conditional columns based on transaction type filter -->
             @if (_selectedFilter == "DepositWithdraw")
             {
                 <th style="width:200px;">Konto</th>
@@ -51,10 +61,12 @@ else
                 <th style="width:160px;">Till konto</th>
             }
 
+            <!-- Sortable column: Amount -->
             <th style="width:110px; cursor:pointer;" @onclick="() => SortByColumn(nameof(Transaction.Amount))">
                 Belopp <span>@GetSortArrow(nameof(Transaction.Amount))</span>
             </th>
 
+            <!-- Balance before and after columns -->
             <th style="width:110px;">Saldo innan</th>
             <th style="width:110px;">Saldo efter</th>
         </tr>
@@ -63,6 +75,7 @@ else
         @foreach (var transaction in FilteredTransactions())
         {
             <tr>
+                <!-- Transaction row: date, type, accounts, amount, balances -->
                 <td>@transaction.Date.ToString("yyyy-MM-dd HH:mm")</td>
                 <td>@GetTransactionTypeDisplay(transaction.Type)</td>
 
@@ -86,14 +99,43 @@ else
 }
 
 @code {
+
+    /// <summary>
+    /// Contains all transactions retrieved from the account service.
+    /// </summary>
     private List<Transaction> _transactions = new();
+
+    /// <summary>
+    /// Contains all bank accounts retrieved from the account service. 
+    /// </summary>
     private List<IBankAccount> _accounts = new();
+
+    /// <summary>
+    /// Stores the currently selected transaction filter type.
+    /// Possible values: "DepositWithdraw", "Transfer", or an empty string (no filter).
+    /// </summary>
     private string _selectedFilter = string.Empty;
+
+    /// <summary>
+    /// The ID of the currently selected account used for filtering.
+    /// </summary>
     private Guid? _selectedAccountId = null;
 
+    /// <summary>
+    /// The name of the column currently used for sorting the transaction list.
+    /// Defaults to <see cref="Transaction.Date"/>.
+    /// </summary>
     private string _sortColumn = nameof(Transaction.Date);
+
+    /// <summary>
+    /// Determines whether sorting is in ascending order.
+    /// </summary>
     private bool _sortAscending = false;
 
+    /// <summary>
+    /// Initializes the component by loading all accounts and their associated transactions.
+    /// Removes duplicate transactions and sorts the results by the current sort settings.
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
         _accounts = await AccountService.GetAccounts();
@@ -105,7 +147,7 @@ else
             allTransactions.AddRange(accTransactions);
         }
 
-        // Ta bort dubletter
+        // Remove duplicates by transaction ID
         _transactions = allTransactions
             .GroupBy(t => t.Id)
             .Select(g => g.First())
@@ -114,6 +156,11 @@ else
         SortTransactions();
     }
 
+    /// <summary>
+    /// Filters the transaction list based on the currently selected filter
+    /// and the selected account (if any).
+    /// </summary>
+    /// <returns>A filtered collection of transactions.</returns>
     private IEnumerable<Transaction> FilteredTransactions()
     {
         var filtered = _transactions.Where(t =>
@@ -131,10 +178,15 @@ else
         return filtered;
     }
 
+    /// <summary>
+    /// Updates the current sort column and direction, then sorts the transaction list.
+    /// </summary>
+    /// <param name="columnName">The name of the column to sort by.</param>
     private void SortByColumn(string columnName)
     {
         if (_sortColumn == columnName)
         {
+            // Toggle sorting direction if the same column is clicked again.
             _sortAscending = !_sortAscending;
         }
         else
@@ -146,6 +198,9 @@ else
         SortTransactions();
     }
 
+    /// <summary>
+    /// Sorts the transactions list according to the current sort column and direction.
+    /// </summary>
     private void SortTransactions()
     {
         _transactions = _sortColumn switch
@@ -160,6 +215,12 @@ else
         };
     }
 
+    /// <summary>
+    /// Returns the appropriate sort arrow symbol (▲ or ▼) for a given column,
+    /// indicating its current sort direction.
+    /// </summary>
+    /// <param name="columnName">The name of the column to evaluate.</param>
+    /// <returns>A Unicode arrow symbol representing the sort order.</returns>
     private string GetSortArrow(string columnName)
     {
         if (_sortColumn == columnName)
@@ -172,6 +233,11 @@ else
         }
     }
 
+    /// <summary>
+    /// Returns a localized, user-friendly display name for a transaction type.
+    /// </summary>
+    /// <param name="type">The transaction type (e.g., "Deposit", "Withdraw").</param>
+    /// <returns>A Swedish string representing the transaction type.</returns>
     private string GetTransactionTypeDisplay(string type) => type switch
     {
         "Deposit" => "Insättning",
@@ -180,6 +246,14 @@ else
         _ => type
     };
 
+    /// <summary>
+    /// Retrieves the originating account information for a given transaction.
+    /// </summary>
+    /// <param name="transaction">The transaction to evaluate.</param>
+    /// <returns>
+    /// A formatted string representing the source account name and type,
+    /// or "-" if not applicable.
+    /// </returns>
     private string GetFromAccount(Transaction transaction)
     {
         var account = _accounts.FirstOrDefault(a => a.Id == transaction.AccountId);
@@ -194,6 +268,14 @@ else
         };
     }
 
+    /// <summary>
+    /// Retrieves the destination account information for a given transaction.
+    /// </summary>
+    /// <param name="transaction">The transaction to evaluate.</param>
+    /// <returns>
+    /// A formatted string representing the destination account name and type,
+    /// or "-" if not applicable.
+    /// </returns>
     private string GetToAccount(Transaction transaction)
     {
         if (transaction.Type == "Deposit" || transaction.Type == "Withdraw")
@@ -210,6 +292,11 @@ else
         return "-";
     }
 
+    /// <summary>
+    /// Returns a localized display name for an <see cref="AccountType"/> value.
+    /// </summary>
+    /// <param name="type">The account type to translate.</param>
+    /// <returns>A Swedish string representing the account type.</returns>
     private string GetAccountTypeDisplay(AccountType type) => type switch
     {
         AccountType.Savings => "Sparkonto",

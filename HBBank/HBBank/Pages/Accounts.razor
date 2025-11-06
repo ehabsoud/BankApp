@@ -2,54 +2,76 @@
 @using System.Diagnostics
 @inject IAccountService AccountService
 
+<!--
+    Displays a list of all available bank accounts.
+    If no accounts exist, shows a message instead of the table.
+-->
 <h3>Alla konton</h3>
 
 @if (_accounts == null)
 {
+    <!-- Display loading message while accounts are being fetched -->
     <p>Laddar konton...</p>
 }
 else if (!_accounts.Any())
 {
+    <!-- Display message if no accounts are found -->
     <p>Inga konton hittades.</p>
 }
 else
 {
+    <!-- Display table of accounts when data is available -->
     <table class="table table-striped">
-        <thead>
+    <thead>
+    <tr>
+        <!-- Column headers for account information -->
+        <th style="width:200px;">Kontonamn</th>
+        <th style="width:150px;">Kontotyp</th>
+        <th style="width:120px;">Saldo</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var account in _accounts)
+    {
         <tr>
-            <th style="width:200px;">Kontonamn</th>
-            <th style="width:150px;">Kontotyp</th>
-            <th style="width:120px;">Saldo</th>
+            <!-- Display account details: name, type, and balance -->
+            <td>@account.Name</td>
+            <td>@GetAccountTypeDisplay(account.AccountType)</td>
+            <td>@account.Balance.ToString("C")</td>
         </tr>
-        </thead>
-        <tbody>
-        @foreach (var account in _accounts)
-        {
-            <tr>
-                <td>@account.Name</td>
-                <td>@GetAccountTypeDisplay(account.AccountType)</td>
-                <td>@account.Balance.ToString("C")</td>
-            </tr>
-        }
-        </tbody>
-    </table>
+    }
+    </tbody>
+</table>
 }
 
 @code {
+
+    /// <summary>
+    /// Holds the list of accounts retrieved from the account service.
+    /// </summary>
     private List<IBankAccount> _accounts;
 
+    /// <summary>
+    /// Called when the component is initialized.
+    /// Fetches all available accounts asynchronously using the injected AccountService.
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
         _accounts = await AccountService.GetAccounts();
     }
 
+    /// <summary>
+    /// Returns a localized, user-friendly display name for an <see cref="AccountType"/> value.
+    /// </summary>
+    /// <param name="type">The account type to translate.</param>
+    /// <returns>A Swedish string representing the account type.</returns>
     private string GetAccountTypeDisplay(AccountType type)
     {
         return type switch
         {
-            AccountType.Savings => "Sparkonto",
-            AccountType.Deposit => "Lönekonto",
-            AccountType.Unknown => "Okänt konto",
+            AccountType.Savings => "Sparkonto", // Savings account
+            AccountType.Deposit => "Lönekonto", // Salary account
+            AccountType.Unknown => "Okänt konto", // Unknown account.
             _ => "Okänt konto"
         };
     }

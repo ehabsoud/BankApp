@@ -2,15 +2,25 @@
 @using System.ComponentModel.DataAnnotations
 @inject IAccountService AccountService;
 
+<!-- 
+    Page for creating a new bank account.
+    Contains a form for entering account details and a table showing created accounts.
+-->
+
 <h3>Vänligen skapa ett konto</h3>
+
+<!-- Account creation form -->
 <EditForm Model="_model" OnValidSubmit="CreateAccountAsync">
     <DataAnnotationsValidator/>
     <ValidationSummary/>
+
+    <!-- Account name input -->
     <div class="mb-2 d-flex align-items-center">
         <label class="me-2" style="width:120px;">Kontonamn</label>
         <InputText @bind-Value="_model.Name" class="form-control" style="flex:1"/>
     </div>
 
+    <!-- Account type select -->
     <div class="mb-2 d-flex align-items-center">
         <label class="me-2" style="width:120px;">Kontotyp</label>
         <InputSelect @bind-Value="_model.AccountType" class="form-select" style="flex:1">
@@ -20,6 +30,7 @@
         </InputSelect>
     </div>
 
+    <!-- Currency select -->
     <div class="mb-2 d-flex align-items-center">
         <label class="me-2" style="width:120px;">Valuta</label>
         <InputSelect @bind-Value="_model.Currency" class="form-select" style="flex:1">
@@ -27,22 +38,27 @@
         </InputSelect>
     </div>
 
+    <!-- Initial balance input -->
     <div class="mb-2 d-flex align-items-center">
         <label class="me-2" style="width:120px;">Start saldo</label>
         <InputNumber @bind-Value="_model.InitialBalance" class="form-control" style="flex:1"/>
     </div>
 
+    <!-- Submit button to create the account -->
     <button type="submit" class="btn btn-primary">Skapa Konto</button>
 </EditForm>
 
+<!-- Section showing the list of created accounts -->
 <h3 class="mt-4">Kontolista</h3>
 
 @if (_accounts == null || _accounts.Count == 0)
 {
+    <!-- Show message when there are no accounts yet -->
     <p>Inga konton har skapats ännu.</p>
 }
 else
 {
+    <!-- Display a table with account details when accounts are available -->
     <table class="table table-striped" style="table-layout: fixed;">
         <thead>
         <tr>
@@ -56,6 +72,7 @@ else
         @foreach (var account in _accounts)
         {
             <tr>
+                <!-- Account row: name, type, balance and last updated -->
                 <td>@account.Name</td>
                 <td>
                     @(account.AccountType switch
@@ -74,14 +91,31 @@ else
 }
 
 @code {
+
+    /// <summary>
+    /// Backing model bound to the account creation form.
+    /// </summary>
     private readonly CreateAccountModel _model = new();
+
+    /// <summary>
+    /// Holds the current list of all created accounts.
+    /// </summary>
     private List<IBankAccount> _accounts = new();
 
+    /// <summary>
+    /// Called when the component is first initialized.
+    /// Loads all existing accounts from the account service.
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
         _accounts = await AccountService.GetAccounts();
     }
 
+    /// <summary>
+    /// Handles the form submission event to create a new account.
+    /// Validates the model and calls the account service to persist the new account.
+    /// Refreshes the account list and resets the form afterward.
+    /// </summary>
     private async Task CreateAccountAsync()
     {
         try
@@ -93,6 +127,7 @@ else
                 _model.InitialBalance
             );
 
+            // Refresh the account list after creation
             _accounts = await AccountService.GetAccounts();
             _model.Clear();
             StateHasChanged();
@@ -103,17 +138,39 @@ else
         }
     }
 
+    /// <summary>
+    /// Represents the data model for creating a new account.
+    /// Includes validation attributes for form input.
+    /// </summary>
     private class CreateAccountModel
     {
+        /// <summary>
+        /// Gets or sets the account name entered by the user.
+        /// </summary>
         [Required(ErrorMessage = "Kontonamn måste anges")]
         public string? Name { get; set; }
 
+        /// <summary>
+        /// Gets or sets the selected account type.
+        /// Defaults to <see cref="AccountType.Unknown"/>.
+        /// </summary>
         public AccountType AccountType { get; set; } = AccountType.Unknown;
+
+        /// <summary>
+        /// Gets or sets the selected currency type.
+        /// </summary>
         public CurrencyType Currency { get; set; }
 
+        /// <summary>
+        /// Gets or sets the initial balance of the account.
+        /// Must be greater than zero.
+        /// </summary>
         [Range(0.01, double.MaxValue, ErrorMessage = "Startbelopp måste vara större än 0")]
         public decimal InitialBalance { get; set; } = 0;
 
+        /// <summary>
+        /// Resets the form fields to their default values.
+        /// </summary>
         public void Clear()
         {
             Name = string.Empty;

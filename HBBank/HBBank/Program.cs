@@ -4,6 +4,7 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
+// Regester services for di
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IStorageService, StorageService>();
 

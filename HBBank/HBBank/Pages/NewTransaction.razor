@@ -2,14 +2,18 @@
 @using HBBank.Domain
 @inject IAccountService AccountService
 
+<!-- Page title for the browser tab -->
 <PageTitle>NewTransaction</PageTitle>
 
+<!-- Main heading for the transaction page -->
 <h3>Ny transaktion</h3>
 
+<!-- Form for creating a new transaction -->
 <EditForm Model="_model" OnValidSubmit="SubmitTransactionAsync">
     <DataAnnotationsValidator/>
     <ValidationSummary/>
 
+    <!-- Transaction type selection -->
     <div class="mb-2 d-flex align-items-center">
         <label class="me-2" style="width:120px;">Typ</label>
         <InputSelect @bind-Value="_model.Type" class="form-select" style="flex:1">
@@ -20,6 +24,7 @@
         </InputSelect>
     </div>
 
+    <!-- Select account to withdraw from -->
     <div class="mb-2 d-flex align-items-center">
         <label class="me-2" style="width:120px">Från konto</label>
         <InputSelect @bind-Value="_model.FromAccountId" TValue="Guid?" class="form-select" style="flex:1">
@@ -35,6 +40,7 @@
 
     @if (_model.Type == "Transfer")
     {
+        <!-- Select account to deposit to (for transfers) -->
         <div class="mb-2 d-flex align-items-center">
             <label class="me-2" style="width:120px">Till konto</label>
             <InputSelect @bind-Value="_model.ToAccountId" TValue="Guid?" class="form-select" style="flex:1">
@@ -49,35 +55,58 @@
         </div>
     }
 
+    <!-- Amount input for the transaction -->
     <div class="mb-2 d-flex align-items-center">
         <label class="me-2" style="width:120px">Belopp</label>
         <InputNumber @bind-Value="_model.Amount" class="form-control" style="flex:1"/>
     </div>
 
+    <!-- Submit button to execute the transaction -->
     <button type="submit" class="btn btn-primary">Utför transaktion</button>
 
     @if (!string.IsNullOrEmpty(_errorMessage))
     {
+        <!-- Display error message if transaction fails -->
         <div class="alert alert-danger mt-2">@_errorMessage</div>
     }
 </EditForm>
 
 @code
 {
+    /// <summary>
+    /// Holds the list of all available accounts that can be used for transactions.
+    /// </summary>
     private List<IBankAccount> _accounts = new();
+
+    /// <summary>
+    /// Stores any error messages to be displayed to the user when a transaction fails.
+    /// </summary>
     private string _errorMessage = string.Empty;
 
+    /// <summary>
+    /// The form model bound to the transaction creation form.
+    /// </summary>
     private TransactionModel _model = new();
 
+    /// <summary>
+    /// Called when the component is first initialized.
+    /// Loads all existing accounts from the account service for selection in the form.
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
         _accounts = await AccountService.GetAccounts();
     }
 
+    /// <summary>
+    /// Handles form submission to process a new transaction.
+    /// Validates user input, checks balance, updates accounts,
+    /// and records the transaction in the account service.
+    /// </summary>
     private async Task SubmitTransactionAsync()
     {
         _errorMessage = string.Empty;
 
+        // Basic validation
         if (string.IsNullOrEmpty(_model.Type))
         {
             _errorMessage = "Välj typ av transaktion.";
@@ -122,6 +151,7 @@
 
         try
         {
+            // Handles deposit
             if (_model.Type == "Deposit")
             {
                 decimal balanceBefore = fromAccount.Balance;
@@ -136,6 +166,7 @@
                     BalanceAfter = fromAccount.Balance
                 });
             }
+            // Handles withdraw
             else if (_model.Type == "Withdraw")
             {
                 if (_model.Amount > fromAccount.Balance)
@@ -156,6 +187,7 @@
                     BalanceAfter = fromAccount.Balance
                 });
             }
+            // Handles transfer
             else if (_model.Type == "Transfer" && toAccount != null)
             {
                 if (_model.Amount > fromAccount.Balance)
@@ -180,6 +212,7 @@
                 });
             }
 
+            // Save all updated accounts and reset the form
             await AccountService.SaveAccounts();
             _model = new TransactionModel();
         }
@@ -189,6 +222,11 @@
         }
     }
 
+    /// <summary>
+    /// Returns a user-friendly string representation of an account type.
+    /// </summary>
+    /// <param name="type">The account type to describe.</param>
+    /// <returns>A localized text description of the account type.</returns>
     private string GetAccountTypeDisplay(AccountType type)
     {
         return type switch
@@ -200,11 +238,31 @@
         };
     }
 
+    /// <summary>
+    /// Represents the data model used for creating a new transaction.
+    /// Contains user input values from the transaction form.
+    /// </summary>
     private class TransactionModel
     {
+        /// <summary>
+        /// Gets or sets the type of transaction (Deposit, Withdraw, or Transfer).
+        /// </summary>
         public string Type { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the ID of the account from which money is withdrawn.
+        /// </summary>
         public Guid? FromAccountId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ID of the destination account (used only for transfers).
+        /// </summary>
         public Guid? ToAccountId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the amount to be processed in the transaction.
+        /// Must be greater than zero.
+        /// </summary>
         public decimal Amount { get; set; }
     }
 }
