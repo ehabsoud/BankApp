@@ -45,6 +45,9 @@ public class AccountService : IAccountService
         if (transFromStorage is { Count: > 0 })
             _transactions.AddRange(transFromStorage);
         isLoaded = true;
+
+        Console.WriteLine(
+            $"[LOG] {DateTime.Now}: Loaded {_accounts.Count} account(s) and {_transactions.Count} transaction(s) from storage.");
     }
 
     /// <summary>
@@ -53,6 +56,8 @@ public class AccountService : IAccountService
     /// </summary>
     private Task SaveAsync()
     {
+        Console.WriteLine(
+            $"[LOG] {DateTime.Now}: Saving {_accounts.Count} accounts and {_transactions.Count} transactions from storage...");
         var saveAccounts = _storageService.SetItemAsync(AccountKey, _accounts);
         var saveTransactions = _storageService.SetItemAsync(TransactionKey, _transactions);
         return Task.WhenAll(saveAccounts, saveTransactions);
@@ -72,6 +77,8 @@ public class AccountService : IAccountService
         await IsInitialized();
         var account = new BankAccount(name, accountType, currency, initialBalance);
         _accounts.Add(account);
+        Console.WriteLine(
+            $"[LOG] {DateTime.Now}: Created new account '{name}' ({accountType}) with initial balance {initialBalance} {currency}.");
         await SaveAsync();
         return account;
     }
@@ -98,9 +105,12 @@ public class AccountService : IAccountService
 
         if (anyChanged)
         {
+            Console.WriteLine(
+                $"[LOG] {DateTime.Now}: Interest applied to one or more accounts. Saving updated balance...");
             await SaveAsync();
         }
 
+        Console.WriteLine($"[LOG] {DateTime.Now}: Retrieved {_accounts.Count} account(s).");
         return _accounts.Cast<IBankAccount>().ToList();
     }
 
@@ -112,6 +122,8 @@ public class AccountService : IAccountService
     {
         await IsInitialized();
         _transactions.Add(transaction);
+        Console.WriteLine(
+            $"[LOG] {DateTime.Now}: Added transaction '{transaction.Type}' for account {transaction.AccountId} (Amount: {transaction.Amount}).");
         await SaveAsync();
     }
 
@@ -123,9 +135,13 @@ public class AccountService : IAccountService
     public async Task<List<Transaction>> GetTransactions(Guid accountId)
     {
         await IsInitialized();
-        return _transactions
+        var transactions = _transactions
             .Where(t => t.AccountId == accountId || t.ToAccountId == accountId)
             .ToList();
+
+        Console.WriteLine(
+            $"[LOG] {DateTime.Now}: Retrieved {transactions.Count} transaction(s) for account {accountId}");
+        return transactions;
     }
 
     /// <summary>
@@ -133,6 +149,7 @@ public class AccountService : IAccountService
     /// </summary>
     public async Task SaveAccounts()
     {
+        Console.WriteLine($"[LOG] {DateTime.Now}: Manual save triggered.");
         await SaveAsync();
     }
 }

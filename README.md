@@ -1,5 +1,5 @@
 # BankApp
-HB Bank - Blazor WebAssembly
+**HB Bank - Blazor WebAssembly**
 
 Overview
 HB Bank is a banking application built in Blazor WebAssembly.
@@ -10,25 +10,30 @@ It allows users to:
 - Transfer funds between own accounts
 - View transaction history with filtering and sorting
 - Store data locally in the browser using LocalStorage
+- Simple console logging for key operations (account creation, transactions, savings, etc.)
 
 Features
 
 1. Create Account
 - Enter account name, account type (Salary / Savings), currency (SEK) and initial balance
-- Validation: account name required, initial balance > 0
+- Validation: account name required, initial balance must be greater than 0
 
 2. Accounts list
 - Display all accounts with name, type, balance and last updated timestamp
+- Interest is applied automatically to savings accounts
+- **Default PIN code for testing: 1234**
 
 3. Transactions
-- Deposit, Withdraw, and Transfer between accounts
+- Types: Deposit, Withdraw, Transfer
 - Prevents overdrafts with clear error messages
-- Transaction history filterable by type and account
-- Sortable by date and amount
+- Transaction history filterable by type (Deposit / Withdraw, Transfer) and account
+- Transactions sortable by date and amount
+- Logs every transaction to the console
 
 4. Persistence
 - Accounts and transactions saves locally in the browser
 - Data persists between sessions
+- Manual saving of account supported
 
 Page / Components
 - Home.razor - Welcome page
@@ -44,7 +49,7 @@ Domain classes
 - CurrencyType - Enum for currencies
 
 Services & Interfaces
-- IAccountService / AccountService - Manages accounts and transactions
+- IAccountService / AccountService - Manages accounts and transactions, includes logging
 - IStorageService / StorageService - Handles local storage via JSInterop
 
 Installation & Run
@@ -57,5 +62,6 @@ Notes
 - All data is stored locally in the browser; clearing browser storage will erase accounts and transactions
 - Error messages are shown for invalid inputs or insufficient balance
 - The application is designed for demonstration and learning purposes; no real banking operations are performed
+- Simple logging via console outputs is included to track account creation, transactions, and saves
  
 

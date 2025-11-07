@@ -1,5 +1,4 @@
 @page "/accounts"
-@using System.Diagnostics
 @using System.Threading;
 @inject IAccountService AccountService
 @implements IDisposable
@@ -10,7 +9,7 @@
 {
     <!-- PIN lock UI -->
     <div class="pin-lock">
-        <p>Ange PIN för att komma åt konton (1234):</p>
+        <p>Ange PIN för att komma åt konton:</p>
         <input @bind="_pinInput" type="password"/>
         <button @onclick="UnlockAccounts">Lås upp</button>
         @if (!string.IsNullOrEmpty(_pinMessage))
